@@ -2,6 +2,7 @@ package com.bc.bissapp.entities;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.Column;
@@ -34,10 +35,11 @@ public class Department {
     private Long id;
 
     @NotBlank(message = "Le nom du département ne peut pas être vide")
-    @Size(min = 2, max = 100, message = "Le nom doit contenir entre 2 et 100 caractères")
+    @Size(min = 2, max = 50, message = "Le nom doit contenir entre 2 et 50 caractères")
     @Column(name = "name", nullable = false, unique = true)
     private String name;
 
+    @JsonIgnoreProperties("department")
     @JsonManagedReference
     @Transient
     @OneToMany(mappedBy = "department")

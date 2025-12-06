@@ -16,15 +16,19 @@ import com.bc.bissapp.iservices.IDepartmentService;
 
 import lombok.AllArgsConstructor;
 
-
 @RestController
 @RequestMapping("/departments")
 @AllArgsConstructor
 public class DepartmentController {
+
     private final IDepartmentService iDepartmentService;
 
     @PostMapping("/create")
     public Department createDepartment(@RequestBody Department department) {
+        // ignore any id sent by the client to avoid accidental merges
+        if (department != null) {
+            department.setId(null);
+        }
         return iDepartmentService.createDepartment(department);
     }
 

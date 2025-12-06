@@ -20,6 +20,8 @@ public class DepartmentService implements IDepartmentService {
 
     @Override
     public Department createDepartment(Department toPersistDepartment) {
+        // Ensure incoming payload cannot force a merge/update by providing an id (or 0)
+        toPersistDepartment.setId(null);
         return departmentRepository.save(toPersistDepartment);
     }
 
