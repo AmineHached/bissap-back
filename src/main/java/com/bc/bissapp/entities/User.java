@@ -1,7 +1,6 @@
 package com.bc.bissapp.entities;
 
 import com.bc.bissapp.entities.enums.UserStatus;
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
@@ -56,7 +55,6 @@ public class User {
     private String email;
 
     @JsonIgnoreProperties("users")
-    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "sub_department_id")
     private SubDepartment subDepartment;
