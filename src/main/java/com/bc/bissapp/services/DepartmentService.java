@@ -17,7 +17,7 @@ public class DepartmentService implements IDepartmentService {
 
     @Autowired
     private final DepartmentRepository departmentRepository;
-    
+
     @Autowired
     private final BlockChainService blockChainService;
 
@@ -26,11 +26,15 @@ public class DepartmentService implements IDepartmentService {
         // Ensure incoming payload cannot force a merge/update by providing an id (or 0)
         toPersistDepartment.setId(null);
         Department created = departmentRepository.save(toPersistDepartment);
-        
-        // Add transaction to blockchain when department is created
-        String blockData = "{ \"action\": \"Create Department\", \"departmentId\": " + created.getId() + ", \"departmentName\": \"" + created.getName() + "\" }";
-        blockChainService.addData(blockData);
-        
+
+        // Add transaction to blockchain
+        try {
+            String blockData = "{ \"action\": \"Create Department\", \"departmentId\": " + created.getId() + ", \"departmentName\": \"" + created.getName() + "\" }";
+            blockChainService.addData(blockData);
+        } catch (Exception e) {
+            System.err.println("Blockchain error: " + e.getMessage());
+        }
+
         return created;
     }
 
@@ -50,8 +54,12 @@ public class DepartmentService implements IDepartmentService {
         if (dept != null) {
             dept.setName(toUpdate.getName());
             Department updated = departmentRepository.save(dept);
-            String blockData = "{ \"action\": \"Update Department\", \"departmentId\": " + updated.getId() + ", \"departmentName\": \"" + updated.getName() + "\" }";
-            blockChainService.addData(blockData);
+            try {
+                String blockData = "{ \"action\": \"Update Department\", \"departmentId\": " + updated.getId() + ", \"departmentName\": \"" + updated.getName() + "\" }";
+                blockChainService.addData(blockData);
+            } catch (Exception e) {
+                System.err.println("Blockchain error: " + e.getMessage());
+            }
             return updated;
         }
         return null;
@@ -64,9 +72,13 @@ public class DepartmentService implements IDepartmentService {
         if (dept.getSubDepartments() != null && !dept.getSubDepartments().isEmpty()) {
             dept.getSubDepartments().clear();
         }
-        String blockData = "{ \"action\": \"Delete Department\", \"departmentId\": " + dept.getId() + ", \"departmentName\": \"" + dept.getName() + "\" }";
-        blockChainService.addData(blockData);
         departmentRepository.delete(dept);
+        try {
+            String blockData = "{ \"action\": \"Delete Department\", \"departmentId\": " + dept.getId() + ", \"departmentName\": \"" + dept.getName() + "\" }";
+            blockChainService.addData(blockData);
+        } catch (Exception e) {
+            System.err.println("Blockchain error: " + e.getMessage());
+        }
         return "Deleted Successfully";
     }
 }

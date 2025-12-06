@@ -19,12 +19,14 @@ public class UserServices implements IUserService {
 
     private final UserRepository userRepository;
     private final SubDepartmentRepository subDepartmentRepository;
-    
+
     @Autowired
     private final BlockChainService blockChainService;
 
     @Override
     public User createUser(User toPersist) {
+        // Ensure incoming payload cannot force a merge by providing an id
+        toPersist.setId(null);
         // Fetch SubDepartment by ID before saving User
         if (toPersist.getSubDepartment() != null && toPersist.getSubDepartment().getId() != null) {
             SubDepartment subDept = subDepartmentRepository.findById(toPersist.getSubDepartment().getId())
@@ -32,8 +34,12 @@ public class UserServices implements IUserService {
             toPersist.setSubDepartment(subDept);
         }
         User created = userRepository.save(toPersist);
-        String blockData = "{ \"action\": \"Create User\", \"userId\": " + created.getId() + ", \"userName\": \"" + created.getName() + "\" }";
-        blockChainService.addData(blockData);
+        try {
+            String blockData = "{ \"action\": \"Create User\", \"userId\": " + created.getId() + ", \"userName\": \"" + created.getName() + "\" }";
+            blockChainService.addData(blockData);
+        } catch (Exception e) {
+            System.err.println("Blockchain error: " + e.getMessage());
+        }
         return created;
     }
 

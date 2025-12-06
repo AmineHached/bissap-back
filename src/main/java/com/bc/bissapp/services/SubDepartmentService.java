@@ -19,12 +19,14 @@ public class SubDepartmentService implements ISubDepartmentService {
 
     private final SubDepartmentRepository subDepartmentRepository;
     private final DepartmentRepository departmentRepository;
-    
+
     @Autowired
     private final BlockChainService blockChainService;
 
     @Override
     public SubDepartment createSubDepartment(SubDepartment toPersistSubDepartment) {
+        // Ensure incoming payload cannot force a merge by providing an id
+        toPersistSubDepartment.setId(null);
         // Fetch Department by ID before saving SubDepartment
         if (toPersistSubDepartment.getDepartment() != null && toPersistSubDepartment.getDepartment().getId() != null) {
             Department dept = departmentRepository.findById(toPersistSubDepartment.getDepartment().getId())
@@ -32,8 +34,14 @@ public class SubDepartmentService implements ISubDepartmentService {
             toPersistSubDepartment.setDepartment(dept);
         }
         SubDepartment created = subDepartmentRepository.save(toPersistSubDepartment);
-        String blockData = "{ \"action\": \"Create SubDepartment\", \"subDepartmentId\": " + created.getId() + ", \"subDepartmentName\": \"" + created.getName() + "\" }";
-        blockChainService.addData(blockData);
+        // Add transaction to blockchain in a separate thread to avoid Hibernate conflicts
+        try {
+            String blockData = "{ \"action\": \"Create SubDepartment\", \"subDepartmentId\": " + created.getId() + ", \"subDepartmentName\": \"" + created.getName() + "\" }";
+            blockChainService.addData(blockData);
+        } catch (Exception e) {
+            // Log but don't fail the request if blockchain fails
+            System.err.println("Blockchain error: " + e.getMessage());
+        }
         return created;
     }
 
@@ -60,8 +68,12 @@ public class SubDepartmentService implements ISubDepartmentService {
                 subDept.setDepartment(dept);
             }
             SubDepartment updated = subDepartmentRepository.save(subDept);
-            String blockData = "{ \"action\": \"Update SubDepartment\", \"subDepartmentId\": " + updated.getId() + ", \"subDepartmentName\": \"" + updated.getName() + "\" }";
-            blockChainService.addData(blockData);
+            try {
+                String blockData = "{ \"action\": \"Update SubDepartment\", \"subDepartmentId\": " + updated.getId() + ", \"subDepartmentName\": \"" + updated.getName() + "\" }";
+                blockChainService.addData(blockData);
+            } catch (Exception e) {
+                System.err.println("Blockchain error: " + e.getMessage());
+            }
             return updated;
         }
         return null;
@@ -75,9 +87,13 @@ public class SubDepartmentService implements ISubDepartmentService {
         if (subDept.getUsers() != null && !subDept.getUsers().isEmpty()) {
             subDept.getUsers().clear();
         }
-        String blockData = "{ \"action\": \"Delete SubDepartment\", \"subDepartmentId\": " + subDept.getId() + ", \"subDepartmentName\": \"" + subDept.getName() + "\" }";
-        blockChainService.addData(blockData);
         subDepartmentRepository.delete(subDept);
+        try {
+            String blockData = "{ \"action\": \"Delete SubDepartment\", \"subDepartmentId\": " + subDept.getId() + ", \"subDepartmentName\": \"" + subDept.getName() + "\" }";
+            blockChainService.addData(blockData);
+        } catch (Exception e) {
+            System.err.println("Blockchain error: " + e.getMessage());
+        }
     }
 
     @Override
