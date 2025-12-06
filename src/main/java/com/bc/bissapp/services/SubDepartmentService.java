@@ -2,6 +2,7 @@ package com.bc.bissapp.services;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.bc.bissapp.entities.Department;
@@ -18,6 +19,9 @@ public class SubDepartmentService implements ISubDepartmentService {
 
     private final SubDepartmentRepository subDepartmentRepository;
     private final DepartmentRepository departmentRepository;
+    
+    @Autowired
+    private final BlockChainService blockChainService;
 
     @Override
     public SubDepartment createSubDepartment(SubDepartment toPersistSubDepartment) {
@@ -27,7 +31,10 @@ public class SubDepartmentService implements ISubDepartmentService {
                     .orElseThrow(() -> new IllegalArgumentException("Department not found"));
             toPersistSubDepartment.setDepartment(dept);
         }
-        return subDepartmentRepository.save(toPersistSubDepartment);
+        SubDepartment created = subDepartmentRepository.save(toPersistSubDepartment);
+        String blockData = "{ \"action\": \"Create SubDepartment\", \"subDepartmentId\": " + created.getId() + ", \"subDepartmentName\": \"" + created.getName() + "\" }";
+        blockChainService.addData(blockData);
+        return created;
     }
 
     @Override
@@ -52,7 +59,10 @@ public class SubDepartmentService implements ISubDepartmentService {
                         .orElseThrow(() -> new IllegalArgumentException("Department not found"));
                 subDept.setDepartment(dept);
             }
-            return subDepartmentRepository.save(subDept);
+            SubDepartment updated = subDepartmentRepository.save(subDept);
+            String blockData = "{ \"action\": \"Update SubDepartment\", \"subDepartmentId\": " + updated.getId() + ", \"subDepartmentName\": \"" + updated.getName() + "\" }";
+            blockChainService.addData(blockData);
+            return updated;
         }
         return null;
     }
@@ -61,6 +71,12 @@ public class SubDepartmentService implements ISubDepartmentService {
     public void deleteSubDepartmentById(Long Id) {
         SubDepartment subDept = subDepartmentRepository.findById(Id)
                 .orElseThrow(() -> new IllegalArgumentException("SubDepartment not found"));
+        // Delete users first to handle cascade
+        if (subDept.getUsers() != null && !subDept.getUsers().isEmpty()) {
+            subDept.getUsers().clear();
+        }
+        String blockData = "{ \"action\": \"Delete SubDepartment\", \"subDepartmentId\": " + subDept.getId() + ", \"subDepartmentName\": \"" + subDept.getName() + "\" }";
+        blockChainService.addData(blockData);
         subDepartmentRepository.delete(subDept);
     }
 

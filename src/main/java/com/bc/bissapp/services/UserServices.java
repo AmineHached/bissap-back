@@ -2,6 +2,7 @@ package com.bc.bissapp.services;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.bc.bissapp.entities.SubDepartment;
@@ -18,6 +19,9 @@ public class UserServices implements IUserService {
 
     private final UserRepository userRepository;
     private final SubDepartmentRepository subDepartmentRepository;
+    
+    @Autowired
+    private final BlockChainService blockChainService;
 
     @Override
     public User createUser(User toPersist) {
@@ -27,7 +31,10 @@ public class UserServices implements IUserService {
                     .orElseThrow(() -> new IllegalArgumentException("SubDepartment not found"));
             toPersist.setSubDepartment(subDept);
         }
-        return userRepository.save(toPersist);
+        User created = userRepository.save(toPersist);
+        String blockData = "{ \"action\": \"Create User\", \"userId\": " + created.getId() + ", \"userName\": \"" + created.getName() + "\" }";
+        blockChainService.addData(blockData);
+        return created;
     }
 
     @Override
@@ -53,13 +60,21 @@ public class UserServices implements IUserService {
                         .orElseThrow(() -> new IllegalArgumentException("SubDepartment not found"));
                 setUser.setSubDepartment(subDept);
             }
-            return userRepository.save(setUser);
+            User updated = userRepository.save(setUser);
+            String blockData = "{ \"action\": \"Update User\", \"userId\": " + updated.getId() + ", \"userName\": \"" + updated.getName() + "\" }";
+            blockChainService.addData(blockData);
+            return updated;
         }
         return null;
     }
 
     @Override
     public void deleteUserById(Long Id) {
+        User user = userRepository.findById(Id).orElse(null);
+        if (user != null) {
+            String blockData = "{ \"action\": \"Delete User\", \"userId\": " + user.getId() + ", \"userName\": \"" + user.getName() + "\" }";
+            blockChainService.addData(blockData);
+        }
         userRepository.deleteById(Id);
     }
 
