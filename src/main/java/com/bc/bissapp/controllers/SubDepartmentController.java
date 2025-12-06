@@ -38,7 +38,7 @@ public class SubDepartmentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @GetMapping("/")
+    @GetMapping({"/", "/all"})
     public ResponseEntity<List<SubDepartment>> getAllSubDepartments() {
         List<SubDepartment> subDepartments = iSubDepartmentService.getSubDepartments();
         return ResponseEntity.status(HttpStatus.OK).body(subDepartments);
